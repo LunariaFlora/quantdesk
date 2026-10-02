@@ -57,6 +57,17 @@ class EngineTests(unittest.TestCase):
         self.assertGreater(r['summary']['shares'], 0)
         self.assertEqual(r['summary']['closed_trades'], 0)
 
+    def test_zero_volume_defers_execution(self):
+        rows = bars([10, 11, 12, 20, 21])
+        rows[3]['volume'] = 0
+        r = backtest(rows, dict(fast=1, slow=3, fee_bps=0, slippage_bps=0))
+        self.assertEqual(r['trades'][0]['date'], '2020-01-05')
+        self.assertEqual(r['curve'][3]['benchmark'], 100000)
+
+    def test_drawdown_includes_initial_capital(self):
+        r = backtest(bars([10, 11, 12, 12]), dict(fast=1, slow=3, capital=120, fee_bps=100, slippage_bps=0))
+        self.assertAlmostEqual(r['summary']['max_drawdown_pct'], -.9)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>观澜 · 策略回测</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><a class="brand" href="/"><span class="mark">∿</span>观澜<span class="brand-en">QUANT DESK</span></a><nav><a class="active" href="#workspace">策略回测</a><a href="/learning" target="_blank" rel="noopener">学习清单 ↗</a></nav><span class="local"><i></i>本地工作台</span></header>
+<main id="workspace">
+<div class="heading"><div><div class="eyebrow">RESEARCH / BACKTEST</div><h1>策略回测</h1><p>选择行情、设定规则，查看交易与资产变化。</p></div><div class="heading-actions"><button type="submit" form="form" id="run-top" class="secondary">运行回测 →</button><button id="export" class="secondary" disabled>导出回测报告 ↓</button></div></div>
+<p id="status-top" role="status" aria-live="polite"></p>
+<div class="layout">
+<aside><form id="form">
+<div class="section-title"><span>01</span><h2>行情数据</h2></div>
+<label for="dataset">数据来源</label><select id="dataset"><option value="sample">AAPL · Apple 历史样本</option><option value="custom">导入 CSV 文件</option></select>
+<div id="upload-wrap" hidden><label for="upload">选择 CSV（最大 3 MB）</label><input id="upload" type="file" accept=".csv"><p class="hint">date, open, high, low, close, volume；价格使用一致口径。</p></div>
+<div id="data-info" class="data-info">正在读取样本…</div>
+<div class="dates"><div><label for="start">开始日期</label><input id="start" name="start" type="date"></div><div><label for="end">结束日期</label><input id="end" name="end" type="date"></div></div>
+<div class="section-title second"><span>02</span><h2>策略参数</h2></div>
+<div class="strategy-name">双均线趋势策略 <span>仅做多</span></div>
+<p class="hint">短均线高于长均线时持有，否则空仓。收盘判断，下一交易日开盘执行。</p>
+<div class="pair"><div><label for="fast">短均线 / 日</label><input id="fast" name="fast" type="number" value="10" min="1" max="250" required></div><div><label for="slow">长均线 / 日</label><input id="slow" name="slow" type="number" value="30" min="2" max="500" required></div></div>
+<label for="capital">初始资金 / 数据计价单位</label><input id="capital" name="capital" type="number" value="100000" min="1" max="1000000000" step="any" required>
+<div class="pair"><div><label for="fee">单边费率 / bps</label><input id="fee" name="fee_bps" type="number" value="5" min="0" max="1000" step="any" required></div><div><label for="slippage">单边滑点 / bps</label><input id="slippage" name="slippage_bps" type="number" value="5" min="0" max="1000" step="any" required></div></div>
+<p class="hint">1 bp = 0.01%；按整股买入，保留零头现金。</p>
+<button type="submit" id="run" class="primary">运行回测 <span>→</span></button><p id="status" role="status" aria-live="polite">等待数据</p>
+</form></aside>
+<section class="results" aria-label="回测结果">
+<div id="empty" class="empty"><h2>尚无回测结果</h2><p>设置左侧参数，点击“运行回测”。</p></div>
+<div id="result" hidden>
+<p id="outdated" class="hint" hidden>参数或数据已变化。以下为上一次回测结果，请重新运行。</p>
+<div class="result-heading"><span id="result-name">AAPL</span><span id="range"></span></div>
+<div class="metrics"><article><span>策略收益率</span><strong id="return">—</strong><small id="equity"></small></article><article><span>买入持有收益</span><strong id="benchmark">—</strong><small>同一起点 · 同等交易成本</small></article><article><span>最大回撤</span><strong id="drawdown">—</strong><small>相对此前资产峰值</small></article><article><span>成交笔数</span><strong id="trades-count">—</strong><small id="fees"></small></article></div>
+<section class="panel"><div class="panel-head"><div><h2>资产轨迹</h2><p id="execution"></p></div><div class="legend"><span class="blue">策略</span><span class="gray">买入持有</span></div></div><canvas id="equity-chart" aria-label="策略与买入持有资产曲线" role="img"></canvas><div class="chart-readout" id="equity-readout">移动到曲线上查看当日资产</div></section>
+<section class="panel"><div class="panel-head"><div><h2>价格与均线</h2><p>原始日线收盘价</p></div><div class="legend"><span class="gray">收盘</span><span class="blue">短均线</span><span class="orange">长均线</span></div></div><canvas id="price-chart" aria-label="收盘价与双均线" role="img"></canvas><div class="chart-readout" id="price-readout">移动到曲线上查看日期和价格</div></section>
+<section class="panel"><div class="panel-head"><div><h2>交易记录</h2><p id="position"></p></div><button id="export-trades" class="text-button">下载 CSV ↓</button></div><div class="table-scroll"><table><thead><tr><th>信号日期</th><th>成交日期</th><th>方向</th><th>成交价</th><th>股数</th><th>手续费</th><th>剩余现金</th></tr></thead><tbody id="trade-rows"></tbody></table></div><div id="no-trades" class="hint" hidden>本区间没有成交。检查趋势条件或初始资金。</div></section>
+<details class="assumptions"><summary>计算口径与数据来源</summary><p id="source"></p><p>选中区间的前 N 根日线用于长均线预热；策略和买入持有从预热后的同一天起算。买入持有在该日开盘买入；零成交量时等待下一有效日。期末按收盘价估值，不强制卖出，未扣期末假设平仓费用。</p><p>单标的、整股、全仓或空仓；无杠杆。手续费按成交金额比例收取，滑点按成交价比例调整。不模拟税费、最低佣金、涨跌停、成交量容量、拆股和现金分红，不适合作为 A 股交易规则的完整模拟。</p><p>此处为历史模拟结果。导入数据若有除权跳变或不同复权口径，请先整理数据再比较。</p></details>
+</div></section></div>
+<footer>观澜 / 历史行情研究<span>日线 · 单标的 · 模拟交易</span></footer>
+</main><script src="/app.js"></script></body></html>

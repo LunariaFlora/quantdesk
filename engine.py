@@ -25,7 +25,7 @@ def parse_csv(text):
             if d in seen or not all(math.isfinite(x) for x in values.values()):
                 raise ValueError()
             o, h, l, c = [values[k] for k in ('open', 'high', 'low', 'close')]
-            if not (0 < l <= min(o, c) <= max(o, c) <= h) or values['volume'] < 0:
+            if not (1e-8 <= l <= min(o, c) <= max(o, c) <= h <= 1e12) or not 0 <= values['volume'] <= 1e18:
                 raise ValueError()
             seen.add(d)
             rows.append({'date': d, **values})
@@ -70,14 +70,15 @@ def backtest(rows, params):
     peak, benchmark_peak, max_dd, benchmark_dd, fees = initial, initial, 0, 0, 0
     trades, curve, closes = [], [], []
     previous_target, signal_date, entry_cost = False, None, 0
-    completed, wins = 0, 0
+    completed, wins, benchmark_started = 0, 0, False
     for i, bar in enumerate(bars):
         # 此处 previous_target 只来自昨天收盘，尚未读取今天收盘价。
         if i >= slow:
-            if i == slow:
+            if not benchmark_started and bar['volume'] > 0:
                 p = bar['open'] * (1 + slip)
-                benchmark_shares = math.floor(initial / (p * (1 + fee))) if bar['volume'] > 0 else 0
+                benchmark_shares = math.floor(initial / (p * (1 + fee)))
                 benchmark_cash -= benchmark_shares * p * (1 + fee)
+                benchmark_started = True
             side, qty, price, cost = None, 0, 0, 0
             if previous_target and shares == 0 and bar['volume'] > 0:
                 price = bar['open'] * (1 + slip)
