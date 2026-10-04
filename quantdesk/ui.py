@@ -55,6 +55,12 @@ class TableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
             return LABELS.get(self.keys[section],self.keys[section]) if orientation == QtCore.Qt.Orientation.Horizontal else str(section+1)
 
+    def sort(self,column,order):
+        self.beginResetModel()
+        key=self.keys[column]
+        self.rows.sort(key=lambda r:(r.get(key) is not None,r.get(key) or 0),reverse=order==QtCore.Qt.SortOrder.DescendingOrder)
+        self.endResetModel()
+
 
 def table():
     t=W.QTableView()
@@ -346,7 +352,7 @@ class Window(W.QMainWindow):
 
     def fetch_data(self):
         provider,symbol,start,end=self.provider.currentData(),self.symbol.text(),self.fetch_start.text(),self.fetch_end.text()
-        self.start_job('正在获取历史行情…',lambda cancel,progress:self.service.fetch(provider,symbol,start,end),self.select_dataset)
+        self.start_job('正在获取历史行情…',lambda cancel,progress:self.service.fetch(provider,symbol,start,end,cancel),self.select_dataset)
 
     def import_data(self):
         path,_=W.QFileDialog.getOpenFileName(self,'导入历史日线','','CSV (*.csv);;所有文件 (*)')
@@ -548,6 +554,7 @@ class Window(W.QMainWindow):
         idx=self.backtest_data.findData(body['dataset_id'])
         if idx >= 0:self.backtest_data.setCurrentIndex(idx)
         self.strategy_editor.setPlainText(json.dumps(body['strategy'],ensure_ascii=False,indent=2))
+        self.saved_strategy_id=None
         self.strategy_label.setText(body['strategy']['name'])
 
     def refresh_configs(self):
@@ -587,11 +594,13 @@ class Window(W.QMainWindow):
         layout.addWidget(split,1)
 
     def refresh_experiments(self):
-        records=self.service.store.documents('experiment')
-        rows=[{'id':r['id'],'name':r['name'],'symbol':r['body']['dataset']['symbol'],**r['body']['summary'],
-               'fast':r['body']['strategy']['fast'],'slow':r['body']['strategy']['slow'],'updated_at':r['updated_at']} for r in records]
+        records=self.service.store.experiment_summaries()
+        rows=[{'id':r['id'],'name':r['name'],'symbol':r['symbol'],**r['summary'],
+               'fast':r['strategy']['fast'],'slow':r['strategy']['slow'],'updated_at':r['updated_at']} for r in records]
         rows.sort(key=lambda r:r['return_pct'],reverse=True)
         populate(self.experiments,rows,['name','symbol','start','end','fast','slow','return_pct','annualized_return_pct','max_drawdown_pct','sharpe','win_rate_pct','profit_loss_ratio','trades','updated_at'])
+        self.experiments.setSortingEnabled(True)
+        self.experiments.sortByColumn(6,QtCore.Qt.SortOrder.DescendingOrder)
 
     def selected_experiments(self):
         selected=self.experiments.selectionModel().selectedRows() if self.experiments.model() else []
@@ -638,12 +647,8 @@ class Window(W.QMainWindow):
     def import_report(self):
         path,_=W.QFileDialog.getOpenFileName(self,'导入实验报告','','JSON (*.json)')
         if not path:return
-        body=json.loads(Path(path).read_text(encoding='utf-8'))
-        required={'strategy','config','dataset','summary','curve','orders','trades','round_trips','engine_version','assumptions'}
-        if not isinstance(body,dict) or not required.issubset(body):raise ValueError('不是完整的桌面版报告')
-        validate(body['strategy'])
-        config(body['config'])
-        if not body['curve']:raise ValueError('报告缺少资产曲线')
+        from .reports import read_report
+        body=read_report(path)
         self.service.store.save('experiment',Path(path).stem+' · 导入',body)
         self.refresh_experiments()
 
@@ -683,9 +688,16 @@ class Window(W.QMainWindow):
 
 
 def main():
+    import argparse
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--verify',metavar='DIRECTORY',help='运行真实样本桌面验收并写入报告后退出')
+    args=parser.parse_args()
     app=W.QApplication(sys.argv)
     app.setApplicationName('QuantDesk')
     app.setOrganizationName('QuantDesk')
     window=Window()
     window.show()
+    if args.verify:
+        from .verify import schedule
+        schedule(app,window,args.verify)
     return app.exec()

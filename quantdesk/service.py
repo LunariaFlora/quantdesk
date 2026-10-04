@@ -28,9 +28,11 @@ class Service:
         self.store.log('INFO', f'导入 {name or path.stem}：{len(rows)} 根日线，清洗移除 {report["removed"]} 行')
         return ident
 
-    def fetch(self, provider, symbol, start, end):
+    def fetch(self, provider, symbol, start, end, cancel=None):
         try:
+            if cancel and cancel():raise InterruptedError('下载已取消')
             rows, metadata = fetch(provider, symbol, start, end)
+            if cancel and cancel():raise InterruptedError('下载已取消，返回数据未保存')
             ident = self.store.add_dataset(f'{symbol} · {provider} · {start}–{end}', symbol, rows, metadata)
             self.store.log('INFO', f'下载 {symbol}：{len(rows)} 根日线，来源 {provider}')
             return ident

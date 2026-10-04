@@ -56,6 +56,42 @@ class DesktopTests(unittest.TestCase):
             self.assertEqual(reopened.store.load(saved)['body']['summary'], window.result['summary'])
             self.assertTrue(reopened.store.documents('strategy'))
 
+    def test_strategy_config_and_report_controls(self):
+        from quantdesk.service import export_result
+        import json
+        with tempfile.TemporaryDirectory() as home:
+            window=Window(Service(home))
+            window.save_strategy()
+            original=window.saved_strategy_id
+            definition=window.definition()
+            definition['fast']=5
+            window.strategy_editor.setPlainText(json.dumps(definition))
+            window.save_strategy()
+            self.assertEqual(window.service.store.load(original)['body']['fast'],5)
+            window.save_strategy(True)
+            self.assertNotEqual(window.saved_strategy_id,original)
+            window.settings['capital'].setText('120000')
+            with patch.object(QtWidgets.QInputDialog,'getText',return_value=('保存配置',True)):
+                window.save_config()
+            window.settings['capital'].setText('50000')
+            window.config_list.setCurrentIndex(1)
+            self.assertEqual(window.current_config()['capital'],120000)
+            self.assertIsNone(window.saved_strategy_id)
+            result=window.service.backtest(window.backtest_data.currentData(),window.definition(),window.current_config())
+            export_result(result,Path(home)/'export')
+            with patch.object(QtWidgets.QFileDialog,'getOpenFileName',return_value=(str(Path(home)/'export/report.json'),'')):
+                window.import_report()
+            self.assertEqual(len(window.service.store.experiment_summaries()),2)
+            window.experiments.selectRow(0)
+            window.load_experiment()
+            self.assertIsNotNone(window.result)
+            broken=Path(home)/'broken.json'
+            result['curve'][0]['cash']+=123
+            broken.write_text(json.dumps(result),encoding='utf-8')
+            with patch.object(QtWidgets.QFileDialog,'getOpenFileName',return_value=(str(broken),'')),self.assertRaises(ValueError):
+                window.import_report()
+            window.close()
+
 
 if __name__ == '__main__':
     unittest.main()

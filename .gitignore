@@ -9,6 +9,7 @@ outputs/
 build/
 dist/
 *.spec
+!packaging/QuantDesk.spec
 *.sqlite3
 *.sqlite3-*
 *.db

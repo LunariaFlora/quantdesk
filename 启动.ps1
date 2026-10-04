@@ -1,7 +1,10 @@
+$ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-if (-not (Test-Path -LiteralPath 'data/aapl.csv')) {
-    python download_data.py
-    if ($LASTEXITCODE -ne 0) { Write-Host 'Sample download failed. You can still import a CSV.' }
+$executable = Join-Path $PSScriptRoot 'dist\QuantDesk\QuantDesk.exe'
+if (Test-Path -LiteralPath $executable) {
+    & $executable
+} else {
+    $python = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
+    if (-not (Test-Path -LiteralPath $python)) { throw 'Create .venv and install requirements.txt first. See README.' }
+    & $python desktop.py
 }
-Write-Host 'Open http://127.0.0.1:8765 in your browser. Ctrl+C stops the server.'
-python server.py

@@ -103,6 +103,16 @@ class Store:
             records = db.execute('SELECT * FROM documents WHERE kind=? ORDER BY updated_at DESC', (kind,)).fetchall()
         return [{**dict(r), 'body': json.loads(r['body'])} for r in records]
 
+    def experiment_summaries(self):
+        # Fetch only list fields; daily curves are decoded when an experiment opens.
+        with self.connect() as db:
+            rows = db.execute("""SELECT id,name,updated_at,
+                json_extract(body,'$.summary') AS summary,
+                json_extract(body,'$.strategy') AS strategy,
+                json_extract(body,'$.dataset.symbol') AS symbol
+                FROM documents WHERE kind='experiment' ORDER BY updated_at DESC""").fetchall()
+        return [dict(r, summary=json.loads(r['summary']), strategy=json.loads(r['strategy'])) for r in rows]
+
     def load(self, ident):
         with self.connect() as db:
             r = db.execute('SELECT * FROM documents WHERE id=?', (ident,)).fetchone()
