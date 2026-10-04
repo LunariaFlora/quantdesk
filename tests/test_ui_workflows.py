@@ -55,6 +55,31 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(w.search.text(),'')
         self.assertIn('AAPL',w.data_context.text())
 
+    def test_before_backtest_displays_real_market_context_without_creating_results(self):
+        w=self.window
+        w.nav.setCurrentRow(3)
+        self.app.processEvents()
+        preview=w.market_preview
+        rows=w.service.store.bars(w.backtest_data.currentData())
+        self.assertIsNone(w.result)
+        self.assertEqual(w.result_stack.currentIndex(),0)
+        self.assertFalse(w.service.store.experiment_summaries())
+        self.assertEqual(len(preview.visible_rows),252)
+        self.assertEqual(preview.metrics['close'].text(),f"{rows[-1]['close']:,.2f}")
+        self.assertIn(rows[-1]['date'],preview.context.text())
+        ma20=preview.price.plotItem.listDataItems()[0].getData()[1][-1]
+        self.assertAlmostEqual(ma20,sum(r['close'] for r in rows[-20:])/20)
+        self.assertTrue(any(type(item).__name__=='BarGraphItem' for item in preview.volume.items()))
+        preview.scope.setCurrentIndex(2)
+        self.assertEqual(len(preview.visible_rows),63)
+        self.assertFalse(w.service.store.experiment_summaries())
+
+    def test_startup_uses_a_normal_bounded_window(self):
+        self.assertFalse(self.window.isMaximized())
+        self.assertFalse(self.window.isFullScreen())
+        self.assertLessEqual(self.window.width(),1280)
+        self.assertLessEqual(self.window.height(),800)
+
     def test_parameter_edits_and_invalid_json_cannot_masquerade_as_current_results(self):
         w=self.window
         w.show_result(self.result())

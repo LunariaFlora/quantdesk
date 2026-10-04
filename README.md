@@ -8,6 +8,8 @@ Windows 原生应用。导入和获取真实历史日线、管理策略、执行
 
 首次启动载入并选中公开 AAPL 历史样本（2015-02-17 至 2017-02-16，506 根真实日线），直接显示 K 线。在“行情数据”中选择 Yahoo、其他来源或导入 CSV；选择固定样本来源会填入其覆盖日期。
 
+未运行回测时，行情页与回测页显示真实价格概览：最近一年 K 线、MA20/MA60、成交量、最新历史收盘及日涨跌/可见区间涨跌。可切换三个月、半年或全部数据；行情数字不代表策略回测结果。启动使用普通居中窗口，首选尺寸不超过 1280×800，并根据显示器可用空间缩小。
+
 数据、策略、配置、实验和日志保存于 `%LOCALAPPDATA%/QuantDesk/library.sqlite3`。环境变量 `QUANTDESK_HOME` 可改用独立目录。备份前关闭程序，再复制该目录。
 
 ## 从源码运行与打包
@@ -62,5 +64,6 @@ dist/QuantDesk/QuantDesk.exe --verify outputs/acceptance
 - `docs/desktop-plan.md`：全范围验收账本。
 - `docs/platform-comparison.md`：成熟工具对照、改进及差异。
 - `docs/ui-review.md`：实际 EXE 的九项界面评审、任务模拟与改进证据。
+- `docs/market-data.md`：行情获取方式、当前已导入数据及价格口径。
 
 旧 server.py 与 web 目录仅用于历史网页开发预览，`python server.py` 后使用 127.0.0.1:8765。正式桌面启动和打包不调用它。

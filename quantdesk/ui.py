@@ -14,6 +14,7 @@ from .data import to_csv
 from .charts import Charts, plot, timestamp, COLORS, LIGHT_COLORS, Candles
 from .theme import DARK, LIGHT, stylesheet
 from .strategy_form import StrategyForm
+from .market_preview import MarketPreview
 
 LABELS = {'date':'日期','open':'开盘','high':'最高','low':'最低','close':'收盘','volume':'成交量',
           'return_pct':'累计收益 %','annualized_return_pct':'年化收益 %','max_drawdown_pct':'最大回撤 %','sharpe':'夏普',
@@ -128,7 +129,10 @@ class Window(W.QMainWindow):
         super().__init__()
         self.service=service or Service()
         self.setWindowTitle('观澜 · 量化研究工作台')
-        self.resize(1440,900)
+        screen=W.QApplication.primaryScreen()
+        available=screen.availableGeometry() if screen else QtCore.QRect(0,0,1600,1000)
+        self.resize(max(1060,min(1280,int(available.width()*.85))),max(680,min(800,int(available.height()*.85))))
+        self.move(available.center()-self.rect().center())
         self.setMinimumSize(1060,680)
         self.preferences=QtCore.QSettings(str(self.service.store.home/'ui.ini'),QtCore.QSettings.Format.IniFormat)
         self.colors=LIGHT if self.preferences.value('theme','dark')=='light' else DARK
@@ -213,9 +217,7 @@ class Window(W.QMainWindow):
             self.charts.show_result(self.result)
             self.mark_dirty()
         self.dataset_context_changed()
-        self.data_chart.clear()
-        if getattr(self,'data_preview_rows',[]):self.data_chart.addItem(Candles(self.data_preview_rows,self.colors))
-        self.data_chart.enableAutoRange()
+        if self.data_preview.dataset:self.data_preview.show_dataset(self.data_preview.dataset,self.data_preview.rows,self.colors)
         if hasattr(self,'comparison_ids') and self.comparison_ids:self.draw_overlay(self.comparison_ids)
 
     def mark_dirty(self):
@@ -337,7 +339,7 @@ class Window(W.QMainWindow):
             self.service.import_csv(sample,'AAPL 历史样本','AAPL')
 
     def build_data(self):
-        layout=self.page('行情数据','历史日线 · 选择数据集查看价格，或获取新的区间')
+        layout=self.page('行情数据','选择来源和日期后获取日线，或导入 CSV；已保存数据可离线查看。')
         bar=W.QHBoxLayout()
         self.provider=W.QComboBox()
         for label,key in [('Yahoo 日线','yahoo'),('Stooq 日线','stooq'),('AAPL 固定样本','plotly')]:self.provider.addItem(label,key)
@@ -402,8 +404,9 @@ class Window(W.QMainWindow):
         query.addStretch()
         right.addLayout(query)
         self.data_tabs=W.QTabWidget()
-        self.data_chart=plot('日线价格')
-        self.data_tabs.addTab(self.data_chart,'K线')
+        self.data_preview=MarketPreview()
+        self.data_chart=self.data_preview.price
+        self.data_tabs.addTab(self.data_preview,'行情概览')
         self.data_table=table()
         self.data_tabs.addTab(self.data_table,'行情明细')
         self.data_meta=W.QPlainTextEdit()
@@ -443,7 +446,7 @@ class Window(W.QMainWindow):
             if row['id']==ident:self.datasets_table.selectRow(i)
         if not self.datasets_table.selectionModel().selectedRows():
             self.data_context.setText('没有匹配的数据集' if self.search.text() else '选择左侧数据集查看行情')
-            self.data_chart.clear();self.data_preview_rows=[];self.data_meta.clear()
+            self.data_preview.clear();self.data_preview_rows=[];self.data_meta.clear()
             populate(self.data_table,[],['date','open','high','low','close','volume'])
 
     def load_data_selection(self,*args):
@@ -462,8 +465,7 @@ class Window(W.QMainWindow):
             self.data_chart.clear()
             # Preview cost is bounded; full records remain queryable/exportable.
             self.data_preview_rows=rows[-5000:]
-            if rows: self.data_chart.addItem(Candles(self.data_preview_rows,self.colors))
-            self.data_chart.enableAutoRange()
+            self.data_preview.show_dataset(ds,self.data_preview_rows,self.colors)
             self.status.setText(f'查询 {len(rows)} 根日线；K线预览显示最近最多 5,000 根')
         self.guard(load)
 
@@ -651,8 +653,9 @@ class Window(W.QMainWindow):
         self.preview_hint=W.QLabel('尚未回测 · 左侧设定参数后运行')
         self.preview_hint.setProperty('muted',True)
         empty_layout.addWidget(self.preview_hint)
-        self.preview_chart=plot('历史日线价格')
-        empty_layout.addWidget(self.preview_chart,1)
+        self.market_preview=MarketPreview()
+        self.preview_chart=self.market_preview.price
+        empty_layout.addWidget(self.market_preview,1)
         self.result_stack.addWidget(empty)
         right=W.QWidget()
         result_layout=W.QVBoxLayout(right)
@@ -700,15 +703,13 @@ class Window(W.QMainWindow):
         self.run_button.setEnabled(bool(ident) and not self.active_job)
         if not ident:
             self.backtest_context.setText('请先导入行情')
-            self.preview_chart.clear()
+            self.market_preview.clear()
             self.mark_dirty()
             self.update_scan_context()
             return
         ds=self.service.store.dataset(ident);m=ds['metadata']
         self.backtest_context.setText(f"{ds['symbol']} · {m['start']} — {m['end']}\n{m['rows']:,} 根日线")
-        self.preview_chart.clear()
-        self.preview_chart.addItem(Candles(self.service.store.bars(ident)[-2000:],self.colors))
-        self.preview_chart.enableAutoRange()
+        self.market_preview.show_dataset(ds,self.service.store.bars(ident),self.colors)
         self.mark_dirty()
         self.update_scan_context()
 
@@ -1088,7 +1089,7 @@ def main():
     app.setApplicationName('QuantDesk')
     app.setOrganizationName('QuantDesk')
     window=Window()
-    window.show()
+    window.showNormal()
     if args.verify:
         from .verify import schedule
         schedule(app,window,args.verify)
