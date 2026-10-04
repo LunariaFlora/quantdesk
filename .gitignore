@@ -6,3 +6,10 @@ data/
 outputs/
 *.log
 *.pid
+build/
+dist/
+*.spec
+*.sqlite3
+*.sqlite3-*
+*.db
+.pytest_cache/
