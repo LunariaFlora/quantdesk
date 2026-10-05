@@ -2,6 +2,8 @@
 
 Windows 原生应用。导入和获取真实历史日线、管理策略、执行事件回测、核对账户账本、研究参数并比较结果。正式应用直接调用 Python 服务和 SQLite，不启动 HTTP 服务，不依赖本地端口。
 
+第一次使用请看 [快速上手](docs/quickstart.md)；给老师或其他电脑发送项目请看 [交付与目录说明](docs/delivery.md)。应用 ZIP 和源码 ZIP 分开生成，不需要发送整个开发目录。
+
 ## 直接打开
 
 双击 `dist/QuantDesk/QuantDesk.exe`，或运行 `启动.ps1`。保留同目录的 `_internal` 文件夹。打包版本不需要另行安装 Python。

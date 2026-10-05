@@ -8,6 +8,7 @@ outputs/
 *.pid
 build/
 dist/
+releases/
 *.spec
 !packaging/QuantDesk.spec
 *.sqlite3
