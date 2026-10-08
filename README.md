@@ -4,6 +4,8 @@ Windows 原生应用。导入和获取真实历史日线、管理策略、执行
 
 第一次使用请看 [快速上手](docs/quickstart.md)；给老师或其他电脑发送项目请看 [交付与目录说明](docs/delivery.md)。应用 ZIP 和源码 ZIP 分开生成，不需要发送整个开发目录。
 
+浏览器演示见 [HTML 演示说明](demo/README.md)：单个离线 HTML 展示八组包内历史行情、三个固定策略、六步操作导览和真实报告导出，无需启动 EXE。
+
 ## 直接打开
 
 双击 `dist/QuantDesk/QuantDesk.exe`，或运行 `启动.ps1`。保留同目录的 `_internal` 文件夹。打包版本不需要另行安装 Python。
