@@ -69,7 +69,7 @@ def main():
     destination.mkdir(exist_ok=False)
     page = destination / 'QuantDesk-demo.html'
     page.write_text(content, encoding='utf-8')
-    (destination / '使用说明.txt').write_text('双击 QuantDesk-demo.html，用 Chrome 或 Edge 打开。无需联网、安装或启动桌面软件。\n这是交互演示：行情是真实历史数据，结果由项目引擎预先计算，支持 8 个数据集和 3 个固定策略示例，不执行任意参数回测或真实下单。\n点击“开始导览”按六个步骤体验；可查看原生程序截图，导出真实报告或行情 CSV。\n发送演示只需发送 HTML；若通过邮件，可发送同目录 ZIP。\n', encoding='utf-8-sig')
+    (destination / '使用说明.txt').write_text('双击 QuantDesk-demo.html，用 Chrome 或 Edge 打开。无需联网、安装或启动桌面软件。\n这是交互演示：行情是真实历史数据，结果由项目引擎预先计算，支持 8 个数据集和 3 个固定策略示例，不执行任意参数回测或真实下单。\n点击“开始导览”，跟随高亮区域选择、运行、查看与导出；可查看原生程序截图，导出真实报告或行情 CSV。\n发送演示只需发送 HTML；若通过邮件，可发送同目录 ZIP。\n', encoding='utf-8-sig')
     with zipfile.ZipFile(destination / 'QuantDesk-HTML-Demo.zip', 'w', zipfile.ZIP_DEFLATED) as package:
         package.write(page, page.name)
         package.write(destination / '使用说明.txt', '使用说明.txt')
