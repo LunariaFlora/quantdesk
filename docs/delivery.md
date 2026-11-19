@@ -1,44 +1,44 @@
-# 交付与目录说明
+# Delivery and directory layout
 
-## 两种包
+## Two kinds of archive
 
-**应用包**给直接使用软件的人：完整解压后运行 `QuantDesk/QuantDesk.exe`，无需 Python。整个 `dist/QuantDesk` 是运行依赖边界，不能仅发送 EXE，也不要随意删 `_internal` 的 DLL 或插件。
+The **application archive** is for people who just want to use the software: unzip it completely and run `QuantDesk/QuantDesk.exe`, with no Python involved. The whole `dist/QuantDesk` folder is the runtime boundary, so sending the executable alone is not enough, and DLLs or plugins inside `_internal` must not be removed.
 
-发布脚本额外放入快速上手、行情说明、七份 CSV（若 `data/demo` 中存在）及其来源记录。CSV 在接收者电脑上手动导入；既不联网也不携带发送者的实验库。内置 AAPL 固定样本仍在运行时目录中。
+The release script additionally puts the quickstart, the market data notes, the seven CSV files (when `data/demo` exists) and their source records into the application archive. Those CSVs are imported by hand on the receiving computer; the archive neither goes online nor carries the sender's experiment library. The built-in AAPL fixed sample stays inside the runtime directory.
 
-**源码包**给需要审阅实现的老师：包含当前 Git 跟踪的桌面入口、quantdesk、测试、文档、固定版本依赖和打包配置，补入源码运行必需的 `data/aapl.csv` 与可用 demo CSV。旧 server/web 仅是历史网页预览，正式入口是 `desktop.py`。保留它们便于追溯，不另立正式项目。
+The **source archive** is for a reviewer who wants to read the implementation. It contains the desktop entry point, the `quantdesk` package, the tests, the documentation, the pinned dependency list and the packaging configuration as tracked by Git, plus the `data/aapl.csv` sample and the demo CSVs that are required to run from source. The old `server.py` and `web/` directory are only a historical browser preview; the production entry point is `desktop.py`. They are kept for traceability and do not constitute a second project.
 
-两个包都不包含 `.venv`、`.git`、build、其他 dist、outputs、本机数据库、日志、`.env` 或凭据。无需发送整个项目目录。若老师只看效果，发送应用包即可；若还检查代码，再附源码包。
+Neither archive contains `.venv`, `.git`, `build`, other `dist` folders, `outputs`, the local database, logs, `.env` files or credentials. There is no need to send the whole project directory. If someone only wants to see the result, send the application archive; if they also want to read the code, add the source archive.
 
-## 生成发布包
+## Generating the release archives
 
-先运行 `打包.ps1` 更新 EXE，然后：
+Build the executable with `build.ps1` first, then run:
 
 ```powershell
 .venv/Scripts/python.exe packaging/make_release.py
 ```
 
-脚本把包与 SHA256 校验清单放到 `releases/<时间>-<提交号>/`，每次新建目录，不覆盖旧包。脚本不会联网下载样本，也不会读取个人数据库。七份扩展样本从 `data/demo` 获取；没有该目录时依然生成可离线使用固定 AAPL 样本的应用包。
+The script writes the archives and a SHA-256 checksum list into `releases/<timestamp>-<commit>/`. Each run creates a new directory and never overwrites an older archive. It does not download samples and does not read a personal database. The seven extended samples come from `data/demo`; without that directory it still produces an application archive that works offline with the fixed AAPL sample.
 
-源码包反映运行发布脚本时的工作树文件内容，版本号是 Git HEAD；源码修改应先测试和提交再发布。SHA256 可用于检查传输后 ZIP 是否完整。
+The source archive reflects the working-tree file contents at the moment the release script runs, and the version string is the Git HEAD commit. Test and commit source changes before publishing. The SHA-256 values let the recipient confirm that a ZIP survived transfer intact.
 
-## 开发目录职责
+## Development directory responsibilities
 
-| 目录或文件 | 用途 | 是否直接给使用者 |
+| Directory or file | Purpose | Given to end users |
 |---|---|---|
-| dist/QuantDesk | EXE 与全部运行库 | 是，完整保留 |
-| releases | 自动生成的应用 ZIP、源码 ZIP、校验清单 | 发送所需 ZIP |
-| quantdesk、desktop.py | 正式桌面源码 | 仅源码审阅 |
-| tests、docs、packaging | 测试、说明、构建发布脚本 | 仅源码审阅 |
-| data/aapl.csv、data/demo | 固定样本与扩展 CSV | 发布脚本按明确目录选取 |
-| .venv、build | 本机开发环境和构建中间文件 | 不发送 |
-| outputs | 验证截图、报告、下载快照等本机证据 | 按需单独选取，不整目录发送 |
-| %LOCALAPPDATA%/QuantDesk | 个人数据、策略、实验、设置 | 不随应用发送 |
+| `dist/QuantDesk` | Executable and all runtime libraries | Yes, keep it complete |
+| `releases` | Generated application ZIP, source ZIP and checksum list | Send only the needed ZIP |
+| `quantdesk`, `desktop.py` | Production desktop source | Source review only |
+| `tests`, `docs`, `packaging` | Tests, documentation, build and release scripts | Source review only |
+| `data/aapl.csv`, `data/demo` | Fixed sample and extended CSVs | Picked by the release script from named directories only |
+| `.venv`, `build` | Local development environment and build intermediates | Never sent |
+| `outputs` | Local evidence: verification screenshots, reports, download snapshots | Select individual files if needed, never the whole directory |
+| `%LOCALAPPDATA%/QuantDesk` | Personal data, strategies, experiments, settings | Never travels with the application |
 
-## 验收与适用范围
+## Acceptance and applicable scope
 
-课程演示的闭环是：真实历史行情 → 策略 → 回测 → 账本核对 → 参数比较 → 报告导出。自动测试覆盖数据校验、指标、策略、账户守恒、实验库和桌面流程；Backtrader 对照只验证对齐配置下的双 SMA 成交和逐日账户，并不证明所有策略或实际交易制度均等价。
+The end-to-end demo loop is: real historical bars, then a strategy, then a backtest, then ledger reconciliation, then parameter comparison, then report export. Automated tests cover data validation, indicators, strategies, account conservation, the experiment library and the desktop workflows. The Backtrader comparison only verifies dual-SMA fills and the per-bar account under aligned settings; it does not prove that every strategy or every real trading rule is equivalent.
 
-发布前实际解压 ZIP，使用独立 `QUANTDESK_HOME` 运行 EXE 的 `--verify` 验收，检查 8 策略比较、9 组参数研究、恢复与六文件导出。仍建议接收者在自己的 Windows 电脑试开一次；当前电脑验收不代表已覆盖每个 Windows 版本。
+Before publishing, unzip the archive for real and run the executable's `--verify` acceptance with a separate `QUANTDESK_HOME`, checking the eight-strategy comparison, the nine parameter runs, experiment reload and the six exported files. A recipient should still launch it once on their own Windows computer: acceptance on this machine does not prove coverage of every Windows version.
 
-本版适合教学研究原型交付。实盘下单、多资产共享资金、卖空、杠杆、完整 T+1/涨跌停/交易日历、分红与企业行动处理尚未实现。公开数据服务可失效，日线止损无法重建日内路径；这些限制不应在展示时省略。
+This version is suitable for delivery as a teaching and research prototype. Live order placement, capital shared across several instruments, short selling, leverage, full T+1, price limit and trading calendar rules, and dividend or corporate-action handling are not implemented. Public data services can stop working, and a daily stop-loss cannot reconstruct the intraday path. These limits should not be omitted when the project is presented.

@@ -1,46 +1,48 @@
-# 快速上手：第一次完整回测
+# Quickstart: your first complete backtest
 
-## 打开与准备数据
+This walkthrough takes one backtest from a fresh install to an exported report. In-app labels are currently Chinese; the italicised English names below are translations of the labels you will click.
 
-完整解压应用 ZIP，再双击 `QuantDesk/QuantDesk.exe`。不需要安装 Python；`_internal` 必须和 EXE 放在一起。启动是普通窗口，可以手动最大化。
+## Open the application and prepare data
 
-第一次打开会显示自带 AAPL 的 506 根历史日线。此时 K 线、均线和成交量是行情，尚未产生策略收益。
+Unzip the application archive completely, then double-click `QuantDesk/QuantDesk.exe`. No Python installation is needed, and the `_internal` folder must stay next to the executable. The application starts as a normal window that you can maximise manually.
 
-要使用 2022–2025 年的数据，进入“行情数据”，点击导入 CSV，选中应用目录 `samples` 中的一份文件，例如 `AAPL.csv`，并填写相应代码。导入后选中该数据集，核对实际日期、行数和“来源与清洗”。七份文件共 6,987 行。`000001.SS` 是上证综合指数，仅用于指数研究，不是可直接买卖的股票。CSV 的供应商原始信息另存于同名 `.source.json`；应用会将本次获取方式记为 CSV 导入。
+The first launch shows the bundled AAPL sample of 506 daily bars. At this stage the candles, moving averages and volume are market data only; no strategy result exists yet.
 
-也可选择 Yahoo，输入代码和开始/结束日期后点击“获取行情”。程序在这一步才联网，保存后可离线研究。第三方端点可能失败，可用 CSV 或离线 AAPL 样本继续操作；失败原因到“任务日志”查看。
+To work with the 2022 to 2025 data, open *Market data*, click import CSV, select one of the files in the application's `samples` folder, for example `AAPL.csv`, and enter the matching symbol. After importing, select the dataset and check the actual dates, the row count and the *Source and cleaning* panel. The seven files hold 6,987 rows in total. `000001.SS` is the SSE Composite index: it is for index research only and is not a tradable stock. The vendor response for each CSV is stored next to it in a `.source.json` file with the same base name, and the application records this retrieval as a CSV import.
 
-## 运行第一个策略
+Alternatively, choose Yahoo, enter the symbol and the start and end dates, then click fetch. The program goes online only at that moment; once the data is saved you can research offline. Third-party endpoints can fail, in which case continue with a CSV or the offline AAPL sample and read the reason in the *Task log*.
 
-1. 进入“回测研究”，确认选中的数据集。
-2. 选择双均线（SMA），快周期设为 10，慢周期设为 30。SMA10 是最近 10 个收盘价的平均值；本模板在快线高于慢线时目标为持仓，在快线不高于慢线时目标为空仓。若预热结束时快线已高于慢线，也可以入场，不必等待新的交叉。先用内置模板，不需要写 JSON。
-3. 开始与结束日期先留空，让程序自动选择预热后的可运行区间。手动指定日期时，要保留开始日期之前的预热数据。若提示历史不足，向后调整起点或换较长的数据集。
-4. 本金设 100,000，手续费 5 bps，滑点 5 bps，仓位 80%。1 bps = 0.01%，所以 5 bps = 0.05%。保留其余设置，点击运行或按 Ctrl+Enter。
-5. 看资产曲线和买入持有基准，再看最大回撤、收益、成交及账户明细。双击一笔成交定位对应行情。
-6. 点击导出，选一个独立文件夹。得到 `report.json` 和五份 CSV：summary、trades、orders、round_trips、equity。保存整组文件；JSON 可重新导入实验库。
+## Run the first strategy
 
-信号在收盘后确定，最早下一交易日开盘执行，不能在已知当天收盘价后倒回当天开盘买入。手续费、滑点和整数交易单位会让实际成交数量和收益不同于理想价格计算。期末未平仓部分按收盘估值，不能把所有浮盈当成已兑现收益。
+1. Open *Backtest research* and confirm which dataset is selected.
+2. Choose the dual SMA template, set the fast period to 10 and the slow period to 30. SMA10 is the average of the last 10 closes. This template targets a long position while the fast line is above the slow line and targets flat while it is not; if the fast line is already above the slow line when warm-up ends, it can enter without waiting for a fresh crossover. Use the built-in template here, no JSON is required.
+3. Leave the start and end dates empty so the program picks the runnable range after warm-up. If you specify dates yourself, keep the warm-up bars before the start date inside the dataset. If the application reports insufficient history, move the start later or switch to a longer dataset.
+4. Set capital to 100,000, commission to 5 bps, slippage to 5 bps and position size to 80%. One basis point is 0.01%, so 5 bps equals 0.05%. Leave the remaining settings alone and click run, or press Ctrl+Enter.
+5. Read the equity curve and the buy-and-hold benchmark, then the maximum drawdown, the return, the fills and the account detail. Double-click a fill to jump to the matching bar.
+6. Click export and pick an empty folder. You get `report.json` and five CSV files: summary, trades, orders, round trips and equity. Keep the whole set together; the JSON file can be imported back into the experiment library.
 
-## 读懂结果并继续研究
+Signals are fixed at the close and executed no earlier than the next trading day's open, so the engine cannot buy at an open that already knew that day's close. Commission, slippage and integer trading units make real fill quantities and returns differ from an idealised price calculation. Any position still open at the end is marked at the final close, so unrealised gains are not the same thing as realised profit.
 
-- **累计收益**：账户资产相对本金的变化；不等同于已平仓盈亏。
-- **最大回撤**：资产从历史最高点到随后低点的最大跌幅，反映期间承受过的损失。
-- **买入持有基准**：帮助判断策略是否只是跟随市场上涨；比较时看相同数据和时间区间。
-- **成交 / 订单**：成交是实际模拟执行；订单中还可能有拒绝记录，检查容量、交易单位等原因。
-- **胜率**：按已平仓交易计算；高胜率仍可能被少数大亏损抵消。
+## Read the results and continue
 
-把慢周期改成 60 后重新运行，观察交易次数和回撤如何变化。修改参数不会自动更新旧结果，必须再运行。
+- **Cumulative return** is the change in account equity relative to the initial capital. It is not the same as realised profit and loss.
+- **Maximum drawdown** is the largest fall from a running equity peak to a later low, and it describes how much loss the account carried along the way.
+- **Buy-and-hold benchmark** helps you judge whether the strategy did anything beyond following a rising market. Compare only over the same data and the same date range.
+- **Fills versus orders** - a fill is a simulated execution, while the order list can also contain rejections. Check capacity, trading unit and similar reasons there.
+- **Win rate** uses closed round trips only, and a high win rate can still be cancelled out by a small number of large losses.
 
-进入“实验与比较”，可尝试快周期 `5,10,15`、慢周期 `20,30,60`，共 9 组。选中多条实验查看叠加曲线，双击一条恢复其配置。比较要求数据哈希和区间一致；预热长度不同的参数研究会统一交易起点。
+Change the slow period to 60 and run again, then watch how the number of trades and the drawdown change. Editing parameters does not update an old result: you must run again.
 
-历史样本中最优参数并不证明以后最优。进一步学习时，先用一段数据选参数，再在未参与选择的后续区间验证，保留失败结果。独立学习安排见源码包中的 `学习清单.txt`。
+Open *Experiments and comparison* and try fast `5,10,15` against slow `20,30,60`, which is nine runs. Select several experiments to see their curves overlaid, and double-click one to restore its configuration. A comparison requires matching data hashes and date ranges; a parameter sweep with different warm-up lengths aligns every run to one common trading start.
 
-## 向老师演示的顺序（约 5–8 分钟）
+The best parameters in a historical sample do not prove the best parameters in the future. To go further, choose parameters on one segment and then validate them on a later segment that took no part in the choice, keeping the failures as well as the successes.
 
-打开应用并解释历史行情来源 → 导入一份 CSV → 展示 SMA10/30 规则和下一日开盘执行 → 运行回测 → 定位一笔成交并查看账户 → 比较几组参数 → 导出六个报告文件。
+## A demonstration order (about 5 to 8 minutes)
 
-可以介绍为“单标的历史日线量化研究原型”。已实现获取/导入、策略、事件回测、参数研究、实验保存和导出；尚无真实交易下单、多资产组合、完整 A 股制度和企业行动处理。展示功能完成度，同时解释这些边界。
+Open the application and explain where the historical data comes from, import one CSV, show the SMA10/30 rule and next-open execution, run the backtest, locate one fill and inspect the account, compare several parameter sets, and export the six report files.
 
-## 数据保存与备份
+The honest one-line description is "single-instrument daily-bar quantitative research prototype". It does fetch and import data, define strategies, run event backtests, sweep parameters, save experiments and export reports. It does not place real orders, share capital across a portfolio, model full A-share trading rules or handle corporate actions. Show what is finished and state those boundaries in the same breath.
 
-默认数据目录是 `%LOCALAPPDATA%/QuantDesk`，包含 `library.sqlite3` 和界面设置。移动或更新应用目录不会自动删除该目录。备份前关闭软件，再复制数据目录。分发应用不会复制你的个人数据库。
+## Data storage and backup
+
+The default data directory is `%LOCALAPPDATA%/QuantDesk`, which holds `library.sqlite3` and the interface settings. Moving or updating the application folder does not delete that directory. Close the application before backing up, then copy the data directory. Distributing the application never copies your personal database.

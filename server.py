@@ -9,7 +9,7 @@ from engine import parse_csv, backtest
 
 ROOT = Path(__file__).resolve().parent
 STATIC = {'/': ('web/index.html', 'text/html'), '/app.js': ('web/app.js', 'text/javascript'),
-          '/style.css': ('web/style.css', 'text/css'), '/learning': ('学习清单.txt', 'text/plain')}
+          '/style.css': ('web/style.css', 'text/css')}
 
 
 class Handler(BaseHTTPRequestHandler):

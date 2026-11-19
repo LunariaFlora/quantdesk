@@ -20,7 +20,7 @@ def main():
     parser.parse_args()
     runtime = ROOT / "dist/QuantDesk"
     if not (runtime / "QuantDesk.exe").is_file() or not (runtime / "_internal").is_dir():
-        raise SystemExit("Run 打包.ps1 first: EXE and _internal are required.")
+        raise SystemExit("Run build.ps1 first: EXE and _internal are required.")
     sample = ROOT / "data/aapl.csv"
     if not sample.is_file():
         raise SystemExit("Missing data/aapl.csv: run download_data.py first.")
@@ -45,7 +45,7 @@ def main():
             add_file(archive, path, "QuantDesk/samples/" + path.name)
     tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
     allowed_roots = {"quantdesk", "tests", "docs", "packaging", "web"}
-    allowed_files = {"README.md", "学习清单.txt", "启动.ps1", "打包.ps1", "desktop.py",
+    allowed_files = {"README.md", "start.ps1", "build.ps1", "desktop.py",
                      "download_data.py", "engine.py", "server.py", "requirements.txt", "requirements-dev.txt", ".gitignore"}
     source_zip = destination / "QuantDesk-Source.zip"
     with zipfile.ZipFile(source_zip, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:

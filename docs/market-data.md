@@ -1,40 +1,40 @@
-# 行情如何获取
+# How market data is obtained
 
-当前是历史日线研究工具。启动读取本机数据，不自动联网或订阅实时行情；下载发生在点击“获取行情”之后。
+QuantDesk is a historical daily-bar research tool. On startup it reads the local library and does not go online or subscribe to live quotes by itself; a download happens only after you click fetch.
 
-| 入口 | 实际获取方式 | 数据范围 |
+| Entry | What actually happens | Coverage |
 |---|---|---|
-| Yahoo 日线 | HTTPS 请求 `query1.finance.yahoo.com/v8/finance/chart/{symbol}`，传入开始/结束时间戳和 `interval=1d`，解析 JSON 中时间及 open/high/low/close/volume | 用户指定代码与日期；本次七组下载全部成功。程序当前不需要 API key；第三方公开端点不是稳定性承诺 |
-| Stooq 日线 | HTTPS 请求 `stooq.com/q/d/l/` 的每日 CSV；没有后缀的代码添加 `.us` | 本次 SPY 请求返回非行情内容，校验失败；当前环境建议使用 Yahoo。不会伪造数据或悄悄换来源 |
-| 公开固定样本 | 下载 Plotly GitHub 仓库中的 `finance-charts-apple.csv` | 仅 AAPL，2015-02-17 至 2017-02-16；506 行。EXE 已包含离线样本 |
-| 导入 CSV | 读取用户选中的文件并识别英文/中文 OHLCV 列 | 用户文件覆盖的日期。重复、坏行处理由导入选项明确决定 |
+| Yahoo daily | HTTPS request to `query1.finance.yahoo.com/v8/finance/chart/{symbol}` with the `period1` and `period2` timestamps, `interval=1d` and `events=history`; the JSON timestamps and open/high/low/close/volume fields are parsed | The symbol and dates you specify. All seven downloads in the recorded batch succeeded. No API key is required by the program today, and a third-party public endpoint is not a stability guarantee |
+| Stooq daily | HTTPS request to `stooq.com/q/d/l/` with `s`, `i=d` and `d1`/`d2` as `YYYYMMDD`; symbols without a suffix get `.us` appended | In the recorded attempt the SPY request returned content that was not a price series and failed validation. Prefer Yahoo in the current setup. The program never fabricates data and never silently switches source |
+| Public fixed sample | Downloads `finance-charts-apple.csv` from the Plotly GitHub datasets repository | AAPL only, 2015-02-17 to 2017-02-16, 506 rows. The executable contains this offline sample |
+| CSV import | Reads the file you select and recognises English or Chinese OHLCV headers | Whatever dates your file covers. Duplicate and invalid-row handling is decided explicitly by the import options |
 
-数据下载或导入后检查日期、有限价格、OHLC 大小关系、非负成交量和重复日期，再按日期排序。不会补造缺失交易日或用前一日价格填充。Yahoo 缺少有效字段的行会被丢弃，清洗记录保留。
+After a download or import, rows are checked for dates, finite prices, OHLC ordering, non-negative volume and duplicate dates, then sorted by date. Missing trading days are not invented and a previous day's price is not carried forward. Yahoo rows without valid fields are dropped and the cleaning record keeps what happened.
 
-校验后的日线保存在 `%LOCALAPPDATA%/QuantDesk/library.sqlite3`，之后可离线查询、回测和导出。若设置 `QUANTDESK_HOME`，则使用指定的本机目录。来源网址/文件路径、供应商、获取时间、日期覆盖、数据哈希和清洗记录保留在元数据中，可在“来源与清洗”查看；实验保存当时的数据标识与元数据。
+Validated daily bars are stored in `%LOCALAPPDATA%/QuantDesk/library.sqlite3` and can afterwards be queried, backtested and exported offline. If `QUANTDESK_HOME` is set, that directory is used instead. The source URL or file path, provider, retrieval time, date coverage, data hash and cleaning record are kept in the dataset metadata and are visible in the *Source and cleaning* panel. A saved experiment keeps the data identifier and metadata it was produced from.
 
-价格使用供应商返回的 OHLC 字段；Yahoo 适配器不读取 adjusted close，也没有额外复权或分红现金处理。企业行动及成交量单位以供应商口径为准。当前并未接入证券账户、交易所盘口或实时推送。
+Prices use the OHLC fields returned by the provider. The Yahoo adapter does not read the adjusted close and applies no extra adjustment or dividend cash handling. Corporate actions and volume units follow the provider's conventions. No brokerage account, exchange order book or live feed is connected.
 
-## 本次实际新增
+## What was actually added in the recorded batch
 
-2026-10-05 导入到当前用户的数据库，未改动原有数据集和实验：
+Imported into the current user's database on 2026-10-05 without changing existing datasets or experiments:
 
-| 标的 | 用途类别 | 日线数 | 实际日期 |
+| Symbol | Category | Daily bars | Actual dates |
 |---|---|---:|---|
-| AAPL | 苹果股票 | 1,003 | 2022-01-03 — 2025-12-31 |
-| MSFT | 微软股票 | 1,003 | 同上 |
-| NVDA | 英伟达股票 | 1,003 | 同上 |
-| TSLA | 特斯拉股票 | 1,003 | 同上 |
-| SPY | 标普 500 ETF | 1,003 | 同上 |
-| QQQ | 纳斯达克 100 ETF | 1,003 | 同上 |
-| 000001.SS | 上证综合指数 | 969 | 2022-01-04 — 2025-12-31 |
+| AAPL | Apple stock | 1,003 | 2022-01-03 to 2025-12-31 |
+| MSFT | Microsoft stock | 1,003 | same as above |
+| NVDA | Nvidia stock | 1,003 | same as above |
+| TSLA | Tesla stock | 1,003 | same as above |
+| SPY | S&P 500 ETF | 1,003 | same as above |
+| QQQ | Nasdaq 100 ETF | 1,003 | same as above |
+| 000001.SS | SSE Composite index | 969 | 2022-01-04 to 2025-12-31 |
 
-共七组、6,987 根日线；当前库共九个数据集。上证指数数据用于历史市场研究，不是可直接买卖的股票。本批日期明确截止到 2025 年末，界面显示历史日期，不称作今天的报价。
+Seven groups, 6,987 daily bars in total; the library then held nine datasets. The index data is for historical market research and is not a directly tradable stock. This batch ends explicitly at the end of 2025, so the interface shows historical dates and never presents them as today's quote.
 
-导入证据：`outputs/data-expansion/import-report.json`；逐组下载快照位于同目录，供应商探测结果位于 `provider-check.json`。下载快照、本机数据库、截图和 EXE 均由 Git 忽略。本批七组未嵌入 EXE 内部；交付 ZIP 额外提供 `samples` 下的七份 CSV 和同名来源记录，可手动导入而无需重新下载。其他电脑的空数据库仍先载入 AAPL 固定样本，个人数据库和实验不会随应用发送。
+Import evidence is in `outputs/data-expansion/import-report.json`, with the per-symbol download snapshots in the same directory and the provider probe results in `provider-check.json`. Download snapshots, the local database, screenshots and the executable are all ignored by Git. These seven groups are not embedded inside the executable; the delivery ZIP additionally ships the seven CSVs and their source records under `samples`, so they can be imported by hand without downloading anything again. An empty database on another computer still loads the fixed AAPL sample first, and neither your personal database nor your experiments travel with the application.
 
-## 本轮验证
+## Verification recorded for this round
 
-38 项测试通过，包括未回测状态不生成实验、市场卡片匹配实际日线、MA20 手算对照、区间切换，以及普通窗口启动。源码截图 `dashboard-data.png` 和 `dashboard-before-backtest.png` 已查看。最终打包 EXE 的 `outputs/market-preview-verify/acceptance.json` 通过，PID 82844，8 策略比较、9 组参数研究和六个导出文件完成，退出码 0。
+38 tests passed, including that no experiment is created before a backtest has run, that market cards match the actual daily bars, an MA20 hand-calculation cross-check, switching the date range, and the normal window launch. The source screenshots `dashboard-data.png` and `dashboard-before-backtest.png` were reviewed. The packaged executable's `outputs/market-preview-verify/acceptance.json` passed with PID 82844: eight strategies compared, nine parameter runs, six exported files, exit code 0.
 
-实际新 EXE 窗口 PID 87884 位于屏幕 (214,128)，尺寸 2452×1522 物理像素，标题栏提供“最大化”按钮，未占满屏幕；观测到新导入的 000001.SS 数据可用于研究。未再通过自动点击干扰已打开的窗口。
+The actual new executable window, PID 87884, sat at screen position (214,128) with a size of 2452 by 1522 physical pixels, offered a maximise button in its title bar and did not fill the screen; the newly imported `000001.SS` data was observed to be usable for research. No automated clicks were sent to the already open window afterwards.
