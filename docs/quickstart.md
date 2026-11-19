@@ -1,6 +1,6 @@
 # Quickstart: your first complete backtest
 
-This walkthrough takes one backtest from a fresh install to an exported report. In-app labels are currently Chinese; the italicised English names below are translations of the labels you will click.
+This walkthrough takes one backtest from a fresh install to an exported report. The italicised English names below are the labels you will click.
 
 ## Open the application and prepare data
 
